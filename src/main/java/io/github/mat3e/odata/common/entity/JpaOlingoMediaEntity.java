@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.entity;
+package io.github.mat3e.odata.common.entity;
 
 import javax.persistence.MappedSuperclass;
 

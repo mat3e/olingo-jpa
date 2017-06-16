@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.entity;
+package io.github.mat3e.odata.common.entity;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -24,11 +24,11 @@ import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mat3e.odata.annotation.ODataEntity;
-import io.github.mat3e.odata.annotation.ODataKey;
-import io.github.mat3e.odata.annotation.ODataNavigationProperty;
-import io.github.mat3e.odata.annotation.ODataProperty;
-import io.github.mat3e.odata.util.ReflectionUtil;
+import io.github.mat3e.odata.common.annotation.ODataEntity;
+import io.github.mat3e.odata.common.annotation.ODataKey;
+import io.github.mat3e.odata.common.annotation.ODataNavigationProperty;
+import io.github.mat3e.odata.common.annotation.ODataProperty;
+import io.github.mat3e.odata.common.util.ReflectionUtil;
 
 /**
  * Base for all OData Entities.

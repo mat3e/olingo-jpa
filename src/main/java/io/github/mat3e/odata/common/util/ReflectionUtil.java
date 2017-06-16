@@ -1,9 +1,9 @@
-package io.github.mat3e.odata.util;
+package io.github.mat3e.odata.common.util;
 
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
 
-import io.github.mat3e.odata.entity.JpaOlingoEntity;
+import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
 
 /**
  * Helper class for extracting annotations from Olingo Entities.

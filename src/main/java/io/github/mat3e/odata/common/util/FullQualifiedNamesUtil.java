@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.util;
+package io.github.mat3e.odata.common.util;
 
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
 
@@ -18,7 +18,7 @@ public class FullQualifiedNamesUtil {
     }
 
     public static final String CONTAINER = propertyOrDefault("container", "Service");
-    public static final FullQualifiedName CONTAINER_FQN = new FullQualifiedName(NAMESPACE_BASE, CONTAINER);
+    public static final FullQualifiedName CONTAINER_FQN = new FullQualifiedName(NAMESPACE.ENTITIES, CONTAINER);
 
     public static FullQualifiedName createFullQualifiedEnumName(String name) {
         return new FullQualifiedName(NAMESPACE.ENUMS, name);

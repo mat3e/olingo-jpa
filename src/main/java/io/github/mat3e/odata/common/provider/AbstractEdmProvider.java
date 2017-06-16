@@ -1,7 +1,6 @@
-package io.github.mat3e.odata.provider;
+package io.github.mat3e.odata.common.provider;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +22,11 @@ import org.apache.olingo.commons.api.edm.provider.CsdlOperation;
 import org.apache.olingo.commons.api.edm.provider.CsdlSchema;
 import org.apache.olingo.commons.api.ex.ODataException;
 
-import io.github.mat3e.odata.provider.csdl.CsdlProvider;
-import io.github.mat3e.odata.util.FullQualifiedNamesUtil;
+import io.github.mat3e.odata.common.provider.csdl.CsdlProvider;
+import io.github.mat3e.odata.common.util.FullQualifiedNamesUtil;
 
 /**
- * Base for EdmProviders which makes a usage of {@link io.github.mat3e.odata.provider.csdl.CsdlProvider CsdlProviders}.
+ * Base for EdmProviders which makes a usage of {@link CsdlProvider CsdlProviders}.
  */
 public abstract class AbstractEdmProvider extends CsdlAbstractEdmProvider {
     private List<CsdlSchema> schemas = new ArrayList<>();
@@ -45,21 +44,19 @@ public abstract class AbstractEdmProvider extends CsdlAbstractEdmProvider {
     private Map<FullQualifiedName, List<CsdlAction>> actions = new HashMap<>();
     private Map<FullQualifiedName, List<CsdlFunction>> functions = new HashMap<>();
 
-    abstract protected List<CsdlProvider> getCsdlProviders();
-
-    public AbstractEdmProvider() {
+    public AbstractEdmProvider(List<CsdlProvider> providers) {
 
         // Set is always in the context of container.
         List<CsdlEntitySet> entitySets = new ArrayList<>();
 
-        for (CsdlProvider csdlProvider : getCsdlProviders()) {
+        providers.forEach(csdlProvider -> {
             CsdlEntitySet set = csdlProvider.getCsdlEntitySet();
             if (set != null) {
                 entitySets.add(set);
             }
 
             updateTypesMapWithType(csdlProvider.getCsdlEntityType(), entities);
-        }
+        });
 
         container.setEntitySets(entitySets).setActionImports(getActionImports())
                  .setFunctionImports(getFunctionImports());
@@ -89,7 +86,7 @@ public abstract class AbstractEdmProvider extends CsdlAbstractEdmProvider {
 
     @Override
     public CsdlEntityContainerInfo getEntityContainerInfo(FullQualifiedName entityContainerName) {
-        return FullQualifiedNamesUtil.CONTAINER_FQN.equals(entityContainerName) ?
+        return entityContainerName == null || FullQualifiedNamesUtil.CONTAINER_FQN.equals(entityContainerName) ?
                 new CsdlEntityContainerInfo().setContainerName(FullQualifiedNamesUtil.CONTAINER_FQN) :
                 null;
     }

@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.provider.csdl;
+package io.github.mat3e.odata.common.provider.csdl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,13 +11,13 @@ import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationPropertyBinding;
 import org.testng.annotations.Test;
 
-import io.github.mat3e.odata.annotation.ODataEntity;
-import io.github.mat3e.odata.annotation.ODataKey;
-import io.github.mat3e.odata.annotation.ODataNavigationProperty;
-import io.github.mat3e.odata.annotation.ODataProperty;
-import io.github.mat3e.odata.entity.JpaOlingoEntity;
-import io.github.mat3e.odata.exception.CsdlExtractException;
-import io.github.mat3e.odata.util.FullQualifiedNamesUtil;
+import io.github.mat3e.odata.common.annotation.ODataEntity;
+import io.github.mat3e.odata.common.annotation.ODataKey;
+import io.github.mat3e.odata.common.annotation.ODataNavigationProperty;
+import io.github.mat3e.odata.common.annotation.ODataProperty;
+import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
+import io.github.mat3e.odata.common.exception.CsdlExtractException;
+import io.github.mat3e.odata.common.util.FullQualifiedNamesUtil;
 
 public class JpaEntityCsdlProviderTest {
 

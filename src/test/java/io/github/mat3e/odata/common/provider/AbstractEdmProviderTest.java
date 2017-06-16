@@ -1,7 +1,6 @@
-package io.github.mat3e.odata.provider;
+package io.github.mat3e.odata.common.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.testng.Assert.fail;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,13 +12,12 @@ import org.apache.olingo.commons.api.edm.provider.CsdlActionImport;
 import org.apache.olingo.commons.api.edm.provider.CsdlFunctionImport;
 import org.testng.annotations.Test;
 
-import io.github.mat3e.odata.annotation.ODataEntity;
-import io.github.mat3e.odata.annotation.ODataKey;
-import io.github.mat3e.odata.annotation.ODataProperty;
-import io.github.mat3e.odata.entity.JpaOlingoEntity;
-import io.github.mat3e.odata.exception.CsdlExtractException;
-import io.github.mat3e.odata.provider.csdl.CsdlProvider;
-import io.github.mat3e.odata.provider.csdl.JpaEntityCsdlProvider;
+import io.github.mat3e.odata.common.annotation.ODataEntity;
+import io.github.mat3e.odata.common.annotation.ODataKey;
+import io.github.mat3e.odata.common.annotation.ODataProperty;
+import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
+import io.github.mat3e.odata.common.exception.CsdlExtractException;
+import io.github.mat3e.odata.common.provider.csdl.JpaEntityCsdlProvider;
 
 public class AbstractEdmProviderTest {
 
@@ -27,16 +25,8 @@ public class AbstractEdmProviderTest {
 
     class TestEdmProvider extends AbstractEdmProvider {
 
-        @Override
-        protected List<CsdlProvider> getCsdlProviders() {
-            CsdlProvider provider = null;
-            try {
-                provider = new TestCsdlEntityProvider();
-            } catch (CsdlExtractException e) {
-                e.printStackTrace();
-                fail();
-            }
-            return Stream.of(provider).collect(Collectors.toList());
+        TestEdmProvider() throws CsdlExtractException {
+            super(Stream.of(new TestCsdlEntityProvider()).collect(Collectors.toList()));
         }
 
         @Override

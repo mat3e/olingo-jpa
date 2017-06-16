@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.annotation;
+package io.github.mat3e.odata.common.annotation;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

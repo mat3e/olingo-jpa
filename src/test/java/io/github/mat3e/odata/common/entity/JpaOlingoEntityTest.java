@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.entity;
+package io.github.mat3e.odata.common.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,10 +10,10 @@ import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
 import org.testng.annotations.Test;
 
-import io.github.mat3e.odata.annotation.ODataEntity;
-import io.github.mat3e.odata.annotation.ODataKey;
-import io.github.mat3e.odata.annotation.ODataNavigationProperty;
-import io.github.mat3e.odata.annotation.ODataProperty;
+import io.github.mat3e.odata.common.annotation.ODataEntity;
+import io.github.mat3e.odata.common.annotation.ODataKey;
+import io.github.mat3e.odata.common.annotation.ODataNavigationProperty;
+import io.github.mat3e.odata.common.annotation.ODataProperty;
 import mockit.Mocked;
 
 public class JpaOlingoEntityTest {

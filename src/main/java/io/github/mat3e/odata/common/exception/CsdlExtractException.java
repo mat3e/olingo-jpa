@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.exception;
+package io.github.mat3e.odata.common.exception;
 
 /**
  * Exception which may occur when building schema with CSDL.

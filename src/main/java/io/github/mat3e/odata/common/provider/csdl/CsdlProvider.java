@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.provider.csdl;
+package io.github.mat3e.odata.common.provider.csdl;
 
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntitySet;

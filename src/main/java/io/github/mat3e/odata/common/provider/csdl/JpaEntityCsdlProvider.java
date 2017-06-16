@@ -1,4 +1,4 @@
-package io.github.mat3e.odata.provider.csdl;
+package io.github.mat3e.odata.common.provider.csdl;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -12,15 +12,15 @@ import org.apache.olingo.commons.api.edm.provider.CsdlNavigationPropertyBinding;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
 
-import io.github.mat3e.odata.annotation.ODataEntity;
-import io.github.mat3e.odata.annotation.ODataKey;
-import io.github.mat3e.odata.annotation.ODataNavigationProperty;
-import io.github.mat3e.odata.annotation.ODataProperty;
-import io.github.mat3e.odata.entity.JpaOlingoEntity;
-import io.github.mat3e.odata.entity.JpaOlingoMediaEntity;
-import io.github.mat3e.odata.exception.CsdlExtractException;
-import io.github.mat3e.odata.util.FullQualifiedNamesUtil;
-import io.github.mat3e.odata.util.ReflectionUtil;
+import io.github.mat3e.odata.common.annotation.ODataEntity;
+import io.github.mat3e.odata.common.annotation.ODataKey;
+import io.github.mat3e.odata.common.annotation.ODataNavigationProperty;
+import io.github.mat3e.odata.common.annotation.ODataProperty;
+import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
+import io.github.mat3e.odata.common.entity.JpaOlingoMediaEntity;
+import io.github.mat3e.odata.common.exception.CsdlExtractException;
+import io.github.mat3e.odata.common.util.FullQualifiedNamesUtil;
+import io.github.mat3e.odata.common.util.ReflectionUtil;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -29,8 +29,7 @@ import javax.validation.constraints.Size;
  * Class which describes an entity in the way understandable for Provider.
  * Operates on Java class in order to get its declared OData annotations.
  */
-public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> implements CsdlProvider {
-    private Class<T> clazz;
+public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObjectCsdlProvider<T> {
     private CsdlEntitySet eSet;
     private CsdlEntityType eType;
     private FullQualifiedName fqn;
@@ -38,11 +37,13 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> implements CsdlPro
     private ODataEntity entityAnnotation;
 
     public JpaEntityCsdlProvider(Class<T> clazz) throws CsdlExtractException {
-        this.clazz = clazz;
+        super(clazz);
+
         this.entityAnnotation = clazz.getAnnotation(ODataEntity.class);
         if (this.entityAnnotation == null) {
             throw new CsdlExtractException("Entity must be annotated as ODataEntity to build its CSDL representation");
         }
+
         init();
     }
 
@@ -88,7 +89,7 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> implements CsdlPro
 
         this.eType.setProperties(properties).setNavigationProperties(navProps).setKey(keys);
         this.eSet = new CsdlEntitySet().setName(entityAnnotation.entitySetName()).setType(getFQN())
-                                       .setNavigationPropertyBindings(navBinds);
+                                       .setNavigationPropertyBindings(navBinds).setIncludeInServiceDocument(true);
     }
 
     private CsdlPropertyRef extractKey(Field f) throws CsdlExtractException {
