@@ -115,18 +115,9 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObject
 
     private CsdlNav extractNavigation(Field f) throws CsdlExtractException {
         String navigationName = f.getAnnotation(ODataNavigationProperty.class).name();
-        Class<?> fieldClass = f.getType();
+        Class<?> type = ReflectionUtil.extractType(f);
 
-        boolean isArray = fieldClass.isArray();
-        boolean isCollection = Iterable.class.isAssignableFrom(fieldClass);
-        Class<?> type = fieldClass;
-        if (isArray) {
-            type = fieldClass.getComponentType();
-        } else if (isCollection) {
-            type = fieldClass.getTypeParameters()[0].getClass();
-        }
-
-        return new CsdlNav(type, navigationName, isArray || isCollection);
+        return new CsdlNav(type, navigationName, ReflectionUtil.isArrayOrCollection(f));
     }
 
     private class CsdlNav {

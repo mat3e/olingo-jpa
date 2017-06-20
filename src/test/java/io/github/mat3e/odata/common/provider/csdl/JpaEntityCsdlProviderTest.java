@@ -2,6 +2,7 @@ package io.github.mat3e.odata.common.provider.csdl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
@@ -57,6 +58,9 @@ public class JpaEntityCsdlProviderTest {
         @ODataNavigationProperty(name = NESTED_FIELD)
         NestedEntity nestedEntity = new NestedEntity();
 
+        @ODataNavigationProperty(name = SET_2)
+        List<NestedEntity> nestedEntities = Arrays.asList(new NestedEntity(), new NestedEntity());
+
         public String getID() {
             return this.ID;
         }
@@ -80,6 +84,14 @@ public class JpaEntityCsdlProviderTest {
         public void setNestedEntity(NestedEntity nestedEntity) {
             this.nestedEntity = nestedEntity;
         }
+
+        public List<NestedEntity> getNestedEntities() {
+            return this.nestedEntities;
+        }
+
+        public void setNestedEntities(List<NestedEntity> nestedEntities) {
+            this.nestedEntities = nestedEntities;
+        }
     }
 
     class TestCsdlEntityProvider extends JpaEntityCsdlProvider<TestEntity> {
@@ -101,9 +113,10 @@ public class JpaEntityCsdlProviderTest {
         // THEN
         assertThat(result.getName()).isEqualTo(SET_1);
         assertThat(result.getTypeFQN().getNamespace()).isEqualTo(FullQualifiedNamesUtil.NAMESPACE.ENTITIES);
-        assertThat(bindings).hasSize(1);
+        assertThat(bindings).hasSize(2);
         assertThat(bindings.get(0).getTarget()).isEqualTo(SET_2);
         assertThat(bindings.get(0).getPath()).isEqualTo(NESTED_FIELD);
+        assertThat(bindings.get(1).getPath()).isEqualTo(SET_2);
     }
 
     @Test
