@@ -17,6 +17,7 @@ import io.github.mat3e.odata.common.annotation.ODataKey;
 import io.github.mat3e.odata.common.annotation.ODataNavigationProperty;
 import io.github.mat3e.odata.common.annotation.ODataProperty;
 import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
+import io.github.mat3e.odata.common.entity.JpaOlingoMediaEntity;
 import io.github.mat3e.odata.common.exception.CsdlExtractException;
 import io.github.mat3e.odata.common.util.FullQualifiedNamesUtil;
 
@@ -94,9 +95,50 @@ public class JpaEntityCsdlProviderTest {
         }
     }
 
+    @ODataEntity(name = "MediaEntity", entitySetName = "MediaEntities")
+    class MediaEntity extends JpaOlingoMediaEntity {
+        @ODataKey
+        @ODataProperty(name = ID_FIELD, type = EdmPrimitiveTypeKind.String)
+        private String ID = ID_VALUE;
+
+        public String getID() {
+            return this.ID;
+        }
+
+        public void setID(String ID) {
+            this.ID = ID;
+        }
+
+        @Override
+        public byte[] getContent() {
+            return new byte[0];
+        }
+
+        @Override
+        public void setContent(byte[] data) {
+
+        }
+
+        @Override
+        public String getContentType() {
+            return null;
+        }
+
+        @Override
+        public void setContentType(String paramString) {
+
+        }
+    }
+
     class TestCsdlEntityProvider extends JpaEntityCsdlProvider<TestEntity> {
         TestCsdlEntityProvider() throws CsdlExtractException {
             super(TestEntity.class);
+        }
+    }
+
+    class TestCsdlMediaEntityProvider extends JpaEntityCsdlProvider<MediaEntity> {
+        TestCsdlMediaEntityProvider() throws CsdlExtractException {
+            super(MediaEntity.class);
         }
     }
 
@@ -149,5 +191,18 @@ public class JpaEntityCsdlProviderTest {
         // THEN
         assertThat(result.getName()).isEqualTo(NAME_1);
         assertThat(result.getNamespace()).isEqualTo(FullQualifiedNamesUtil.NAMESPACE.ENTITIES);
+    }
+
+    @Test
+    public void test_JpaEntityCsdlProvider_mapsMediaEntity() throws CsdlExtractException {
+
+        // GIVEN
+        final JpaEntityCsdlProvider sut = new TestCsdlMediaEntityProvider();
+
+        // WHEN
+        boolean hasStream = sut.getCsdlEntityType().hasStream();
+
+        // THEN
+        assertThat(hasStream).isTrue();
     }
 }

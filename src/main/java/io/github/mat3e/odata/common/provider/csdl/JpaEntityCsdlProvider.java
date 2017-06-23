@@ -66,7 +66,7 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObject
         this.fqn = FullQualifiedNamesUtil.createFullQualifiedEntityName(entityAnnotation.name());
 
         this.eType = new CsdlEntityType().setName(entityAnnotation.name())
-                                         .setHasStream(JpaOlingoMediaEntity.class.isAssignableFrom(getClass()));
+                                         .setHasStream(JpaOlingoMediaEntity.class.isAssignableFrom(clazz));
 
         List<CsdlPropertyRef> keys = new ArrayList<>();
         List<CsdlProperty> properties = new ArrayList<>();
