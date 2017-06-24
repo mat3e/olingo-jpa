@@ -118,16 +118,6 @@ public class JpaEntityCsdlProviderTest {
         public void setContent(byte[] data) {
 
         }
-
-        @Override
-        public String getContentType() {
-            return null;
-        }
-
-        @Override
-        public void setContentType(String paramString) {
-
-        }
     }
 
     class TestCsdlEntityProvider extends JpaEntityCsdlProvider<TestEntity> {
