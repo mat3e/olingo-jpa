@@ -1,29 +1,43 @@
 package io.github.mat3e.odata.common.provider.csdl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.apache.olingo.commons.api.edm.FullQualifiedName;
+import org.apache.olingo.commons.api.edm.provider.CsdlAction;
+import org.apache.olingo.commons.api.edm.provider.CsdlComplexType;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntitySet;
 import org.apache.olingo.commons.api.edm.provider.CsdlEntityType;
+import org.apache.olingo.commons.api.edm.provider.CsdlEnumType;
+import org.apache.olingo.commons.api.edm.provider.CsdlFunction;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlNavigationPropertyBinding;
+import org.apache.olingo.commons.api.edm.provider.CsdlOperation;
+import org.apache.olingo.commons.api.edm.provider.CsdlParameter;
 import org.apache.olingo.commons.api.edm.provider.CsdlProperty;
 import org.apache.olingo.commons.api.edm.provider.CsdlPropertyRef;
+import org.apache.olingo.commons.api.edm.provider.CsdlReturnType;
 
 import io.github.mat3e.odata.common.annotation.ODataEntity;
 import io.github.mat3e.odata.common.annotation.ODataKey;
 import io.github.mat3e.odata.common.annotation.ODataNavigationProperty;
+import io.github.mat3e.odata.common.annotation.ODataOperation;
+import io.github.mat3e.odata.common.annotation.ODataOperationParameter;
 import io.github.mat3e.odata.common.annotation.ODataProperty;
 import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
 import io.github.mat3e.odata.common.entity.JpaOlingoMediaEntity;
 import io.github.mat3e.odata.common.exception.CsdlExtractException;
+import io.github.mat3e.odata.common.util.EdmTypeUtil;
 import io.github.mat3e.odata.common.util.FullQualifiedNamesUtil;
 import io.github.mat3e.odata.common.util.ReflectionUtil;
-
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 /**
  * Class which describes an entity in the way understandable for Provider.
@@ -35,6 +49,12 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObject
     private FullQualifiedName fqn;
 
     private ODataEntity entityAnnotation;
+
+    // operations bound to the entity
+    private List<CsdlAction> actions = new ArrayList<>();
+    private List<CsdlFunction> functions = new ArrayList<>();
+
+    private Map<String, String> ODataToJavaProperties = new HashMap<>();
 
     public JpaEntityCsdlProvider(Class<T> clazz) throws CsdlExtractException {
         super(clazz);
@@ -62,6 +82,50 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObject
         return fqn;
     }
 
+    /**
+     * Methods from the entity.
+     */
+    @Override
+    public List<CsdlAction> getCsdlActions() {
+        return this.actions;
+    }
+
+    /**
+     * Read-only methods from the entity.
+     */
+    @Override
+    public List<CsdlFunction> getCsdlFunctions() {
+        return this.functions;
+    }
+
+    /**
+     * Gets Java property name for a given OData property name. Works for Java properties which were the sources of
+     * OData properties.
+     *
+     * @param ODataProperty
+     *         name of the OData property
+     * @return name of Java property, which was the source of OData property
+     */
+    public String getJavaPropertyForODataProperty(String ODataProperty) {
+        return ODataToJavaProperties.get(ODataProperty);
+    }
+
+    /**
+     * Entity shouldn't define enums inside.
+     */
+    @Override
+    public CsdlEnumType getCsdlEnumType() {
+        return null;
+    }
+
+    /**
+     * Entity shouldn't define classes inside.
+     */
+    @Override
+    public CsdlComplexType getCsdlComplexType() {
+        return null;
+    }
+
     private void init() throws CsdlExtractException {
         this.fqn = FullQualifiedNamesUtil.createFullQualifiedEntityName(entityAnnotation.name());
 
@@ -87,6 +151,18 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObject
             }
         }
 
+        Method[] methods = ReflectionUtil.getMethodsUpToJpaOdataEntity(clazz);
+        for (Method method : methods) {
+            ODataOperation funcAnnotation = method.getAnnotation(ODataOperation.class);
+            if (funcAnnotation != null) {
+                if (funcAnnotation.action()) {
+                    actions.add(extractAction(method));
+                } else {
+                    functions.add(extractFunction(method));
+                }
+            }
+        }
+
         this.eType.setProperties(properties).setNavigationProperties(navProps).setKey(keys);
         this.eSet = new CsdlEntitySet().setName(entityAnnotation.entitySetName()).setType(getFQN())
                                        .setNavigationPropertyBindings(navBinds).setIncludeInServiceDocument(true);
@@ -101,14 +177,16 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObject
     }
 
     private CsdlProperty extractProperty(Field f) {
-        ODataProperty odataAnn = f.getAnnotation(ODataProperty.class);
-        CsdlProperty result = new CsdlProperty().setName(odataAnn.name())
-                                                .setType(odataAnn.type().getFullQualifiedName())
+        ODataProperty odataPropAnn = f.getAnnotation(ODataProperty.class);
+        String odataName = odataPropAnn.name();
+        CsdlProperty result = new CsdlProperty().setName(odataName).setType(odataPropAnn.type().getFullQualifiedName())
                                                 .setCollection(ReflectionUtil.isArrayOrCollection(f))
                                                 .setNullable(!f.isAnnotationPresent(NotNull.class));
         if (f.isAnnotationPresent(Size.class)) {
             result.setMaxLength(f.getAnnotation(Size.class).max());
         }
+
+        ODataToJavaProperties.put(odataName, f.getName());
 
         return result;
     }
@@ -117,7 +195,59 @@ public class JpaEntityCsdlProvider<T extends JpaOlingoEntity> extends JavaObject
         String navigationName = f.getAnnotation(ODataNavigationProperty.class).name();
         Class<?> type = ReflectionUtil.extractType(f);
 
+        ODataToJavaProperties.put(navigationName, f.getName());
+
         return new CsdlNav(type, navigationName, ReflectionUtil.isArrayOrCollection(f));
+    }
+
+    private CsdlAction extractAction(Method method) throws CsdlExtractException {
+        return (CsdlAction) handleOperation(method, new CsdlAction());
+    }
+
+    private CsdlFunction extractFunction(Method method) throws CsdlExtractException {
+        return (CsdlFunction) handleOperation(method, new CsdlFunction());
+    }
+
+    private CsdlOperation handleOperation(Method method, CsdlOperation operation) throws CsdlExtractException {
+        ODataOperation methodAnnotation = method.getAnnotation(ODataOperation.class);
+        operation.setName(methodAnnotation.name()).setBound(true);
+
+        List<CsdlParameter> parameters = new ArrayList<>();
+        parameters.add(new CsdlParameter().setNullable(false).setType(getFQN()).setName(BINDING_PARAM_NAME));
+
+        Class<?>[] clazzes = method.getParameterTypes();
+        Annotation[][] paramAnnotations = method.getParameterAnnotations();
+
+        for (int i = 0; i < clazzes.length; ++i) {
+            Class<?> clazz = clazzes[i];
+            // TODO: more than primitive types
+            CsdlParameter csdlParameter = new CsdlParameter().setNullable(false).setType(
+                    EdmTypeUtil.getEdmPrimitiveTypeFor(clazz).getFullQualifiedName())
+                                                             .setCollection(ReflectionUtil.isArrayOrCollection(clazz));
+
+            for (Annotation annotation : paramAnnotations[i]) {
+                if ((annotation instanceof ODataOperationParameter)) {
+                    ODataOperationParameter paramAnnotation = (ODataOperationParameter) annotation;
+                    csdlParameter.setName(paramAnnotation.name());
+                    break;
+                }
+            }
+
+            parameters.add(csdlParameter);
+        }
+
+        operation.setParameters(parameters);
+
+        Class<?> returnTypeClass = method.getReturnType();
+        if (!returnTypeClass.equals(Void.TYPE)) {
+            CsdlReturnType returnType = new CsdlReturnType()
+                    .setCollection(ReflectionUtil.isArrayOrCollection(returnTypeClass))
+                    .setType(EdmTypeUtil.getEdmPrimitiveTypeFor(returnTypeClass).getFullQualifiedName());
+
+            operation.setReturnType(returnType);
+        }
+
+        return operation;
     }
 
     private class CsdlNav {

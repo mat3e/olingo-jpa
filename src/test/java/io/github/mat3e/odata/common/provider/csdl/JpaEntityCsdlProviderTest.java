@@ -15,6 +15,8 @@ import org.testng.annotations.Test;
 import io.github.mat3e.odata.common.annotation.ODataEntity;
 import io.github.mat3e.odata.common.annotation.ODataKey;
 import io.github.mat3e.odata.common.annotation.ODataNavigationProperty;
+import io.github.mat3e.odata.common.annotation.ODataOperation;
+import io.github.mat3e.odata.common.annotation.ODataOperationParameter;
 import io.github.mat3e.odata.common.annotation.ODataProperty;
 import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
 import io.github.mat3e.odata.common.entity.JpaOlingoMediaEntity;
@@ -44,6 +46,12 @@ public class JpaEntityCsdlProviderTest {
 
         public void setID(String ID) {
             this.ID = ID;
+        }
+
+        @ODataOperation(name = "RunLogic", action = true)
+        public void runHeavyLogic(@ODataOperationParameter(name = "Param1") int param1,
+                @ODataOperationParameter(name = "Param2") String param2) {
+            // ...
         }
     }
 
@@ -126,6 +134,12 @@ public class JpaEntityCsdlProviderTest {
         }
     }
 
+    class TestCsdlNestedEntityProvider extends JpaEntityCsdlProvider<NestedEntity> {
+        TestCsdlNestedEntityProvider() throws CsdlExtractException {
+            super(NestedEntity.class);
+        }
+    }
+
     class TestCsdlMediaEntityProvider extends JpaEntityCsdlProvider<MediaEntity> {
         TestCsdlMediaEntityProvider() throws CsdlExtractException {
             super(MediaEntity.class);
@@ -194,5 +208,34 @@ public class JpaEntityCsdlProviderTest {
 
         // THEN
         assertThat(hasStream).isTrue();
+    }
+
+    @Test
+    public void test_JpaEntityCsdlProvider_getJavaPropertyForODataProperty_returnsWhatDefined()
+            throws CsdlExtractException {
+
+        // GIVEN
+        final JpaEntityCsdlProvider sut = new TestCsdlEntityProvider();
+
+        // WHEN + THEN
+        assertThat(sut.getJavaPropertyForODataProperty(NAME_FIELD)).isEqualTo("name");
+        assertThat(sut.getJavaPropertyForODataProperty(ID_FIELD)).isEqualTo("ID");
+    }
+
+    @Test
+    public void test_JpaEntityCsdlProvider_mapsActions() throws CsdlExtractException {
+
+        // GIVEN
+        final TestCsdlNestedEntityProvider sut = new TestCsdlNestedEntityProvider();
+
+        // WHEN + THEN
+        assertThat(sut.getCsdlActions()).hasSize(1);
+        assertThat(sut.getCsdlActions().get(0).getParameters()).hasSize(3);
+        assertThat(sut.getCsdlActions().get(0).getParameters().get(0).getName())
+                .isEqualTo(CsdlProvider.BINDING_PARAM_NAME);
+        assertThat(sut.getCsdlActions().get(0).getParameters().get(1).getTypeFQN())
+                .isEqualTo(EdmPrimitiveTypeKind.Int32.getFullQualifiedName());
+        assertThat(sut.getCsdlActions().get(0).getParameters().get(2).getTypeFQN())
+                .isEqualTo(EdmPrimitiveTypeKind.String.getFullQualifiedName());
     }
 }

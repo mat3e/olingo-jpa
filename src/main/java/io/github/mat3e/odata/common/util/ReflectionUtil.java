@@ -1,8 +1,8 @@
 package io.github.mat3e.odata.common.util;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
@@ -13,14 +13,25 @@ import io.github.mat3e.odata.common.entity.JpaOlingoEntity;
 public class ReflectionUtil {
 
     /**
-     * Checks class conditions to answer if it contains multiple elements.
+     * Checks field class conditions to answer if it contains multiple elements.
      *
      * @param f
      *         field to be checked
-     * @return true if the array of iterable
+     * @return true if the array or iterable
      */
     public static boolean isArrayOrCollection(Field f) {
         return isArrayOrCollection(f.getType());
+    }
+
+    /**
+     * Checks class conditions to answer if it contains multiple elements.
+     *
+     * @param fieldClass
+     *         class to be checked
+     * @return true if the array or iterable
+     */
+    public static boolean isArrayOrCollection(Class<?> fieldClass) {
+        return fieldClass.isArray() || Iterable.class.isAssignableFrom(fieldClass);
     }
 
     /**
@@ -56,11 +67,16 @@ public class ReflectionUtil {
         return result.toArray(Field[]::new);
     }
 
-    private static boolean isLastClass(Class<?> clazz) {
-        return clazz.equals(JpaOlingoEntity.class);
+    public static Method[] getMethodsUpToJpaOdataEntity(Class<?> firstClass) {
+        Stream<Method> result = Stream.of(firstClass.getDeclaredMethods());
+        Class<?> superclass = firstClass.getSuperclass();
+        if (!isLastClass(superclass)) {
+            result = Stream.concat(result, Stream.of(getMethodsUpToJpaOdataEntity(superclass)));
+        }
+        return result.toArray(Method[]::new);
     }
 
-    private static boolean isArrayOrCollection(Class<?> fieldClass) {
-        return fieldClass.isArray() || Iterable.class.isAssignableFrom(fieldClass);
+    private static boolean isLastClass(Class<?> clazz) {
+        return clazz.equals(JpaOlingoEntity.class);
     }
 }

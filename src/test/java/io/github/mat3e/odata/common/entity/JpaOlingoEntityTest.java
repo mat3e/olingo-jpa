@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.data.Property;
+import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
 import org.testng.annotations.Test;
 
@@ -32,13 +34,6 @@ public class JpaOlingoEntityTest {
     private final TestEntity basic = new TestEntity();
     private final ExtendingEntity extended = new ExtendingEntity();
     private final NestedEntity nested = new NestedEntity();
-
-    @Mocked
-    EntityToMock entityMock;
-
-    @ODataEntity(name = "EntityToMock")
-    class EntityToMock extends JpaOlingoEntity {
-    }
 
     @ODataEntity(name = "NestedEntity", entitySetName = SET_3)
     class NestedEntity extends JpaOlingoEntity {
@@ -182,5 +177,38 @@ public class JpaOlingoEntityTest {
         assertThat(result.getInlineEntity()).isNull();
         assertThat(result.getInlineEntitySet()).hasSize(2);
         assertThat(result.getInlineEntitySet()).contains(nested);
+    }
+
+    @Test
+    public void test_JpaOlingoEntity_patch_updatesAllFieldsButID() {
+
+        // GIVEN
+        final String NEW_NAME = "NewName";
+
+        Entity entityToSet = new Entity().addProperty(new Property(null, NAME_FIELD, ValueType.PRIMITIVE, NEW_NAME))
+                                         .addProperty(new Property(null, ID_FIELD, ValueType.PRIMITIVE, "WRONG!!111"));
+
+        TestEntity SUT = new TestEntity();
+
+        // WHEN
+        SUT.patch(entityToSet);
+
+        // THEN
+        assertThat(SUT.getName()).isEqualTo(NEW_NAME);
+        assertThat(SUT.getID()).isEqualTo(ID_VALUE);
+    }
+
+    @Test
+    public void test_JpaOlingoEntity_put_setsNullIfForNotSpecifiedValuesButID() {
+
+        // GIVEN
+        TestEntity SUT = new TestEntity();
+
+        // WHEN
+        SUT.put(new Entity());
+
+        // THEN
+        assertThat(SUT.getName()).isNull();
+        assertThat(SUT.getID()).isEqualTo(ID_VALUE);
     }
 }

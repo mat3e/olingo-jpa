@@ -11,11 +11,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
+import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
@@ -35,7 +37,7 @@ import io.github.mat3e.odata.common.util.ReflectionUtil;
  * Subclasses has to be POJOs.
  */
 @MappedSuperclass
-public class JpaOlingoEntity extends Entity {
+public abstract class JpaOlingoEntity extends Entity {
     @Transient
     private static final Logger LOG = LoggerFactory.getLogger(JpaOlingoEntity.class);
 
@@ -67,9 +69,9 @@ public class JpaOlingoEntity extends Entity {
                 } else {
                     // for many keys either their order is important or they can be used as name=value pairs
                     for (Field key : keys) {
-                        uriString.append(key.getAnnotation(ODataProperty.class).name()).append("=")
-                                 .append(parseKeyValue(key.get(this).toString(),
-                                         key.getAnnotation(ODataProperty.class).type())).append(",");
+                        ODataProperty propertyAnn = key.getAnnotation(ODataProperty.class);
+                        uriString.append(propertyAnn.name()).append("=")
+                                 .append(parseKeyValue(key.get(this).toString(), propertyAnn.type())).append(",");
                     }
                     uriString.deleteCharAt(uriString.length() - 1);
                 }
@@ -134,7 +136,8 @@ public class JpaOlingoEntity extends Entity {
 
                     String name = annotation.name();
                     link.setTitle(name);
-                    link.setRel("http://docs.oasis-open.org/odata/ns/related/" + name);
+                    link.setType(Constants.ENTITY_NAVIGATION_LINK_TYPE);
+                    link.setRel(Constants.NS_NAVIGATION_LINK_REL + name);
 
                     if (ReflectionUtil.isArrayOrCollection(f)) {
                         EntityCollection entityCollection = new EntityCollection();
@@ -170,6 +173,42 @@ public class JpaOlingoEntity extends Entity {
         getNavigationLinks();
 
         return this;
+    }
+
+    /**
+     * Method for updating just sent fields (those in the entity).
+     */
+    public void patch(Entity entity) {
+        setFromEntity(entity, false);
+    }
+
+    /**
+     * Method for updating and setting fields which were not sent to null.
+     */
+    public void put(Entity entity) {
+        setFromEntity(entity, true);
+    }
+
+    // TODO: navigation links support
+    protected void setFromEntity(Entity entity, boolean overrideWithNull) {
+        List<Property> sourceProperties = entity.getProperties();
+
+        if (proxy.properties == null || proxy.propertyAccessors == null) {
+            getProperties();
+        }
+
+        if (overrideWithNull) {
+            proxy.properties.forEach(prop -> {
+                if (!sourceProperties.contains(prop)) {
+                    proxy.propertyAccessors.get(prop.getName()).set(this, null);
+                }
+            });
+        }
+
+        sourceProperties.forEach(prop -> proxy.propertyAccessors.get(prop.getName()).set(this, prop.getValue()));
+
+        // we need new values in the cache after the next call
+        proxy.properties = null;
     }
 
     private Field[] getAccessibleFields() {
@@ -236,11 +275,13 @@ public class JpaOlingoEntity extends Entity {
      */
     private static class RealAccessors<T extends JpaOlingoEntity> {
         private String name;
+        private boolean isKey;
         private Method getter;
         private Method setter;
 
         RealAccessors(T entity, Field f) {
             name = f.getName();
+            isKey = f.isAnnotationPresent(ODataKey.class);
             try {
                 getter = entity.getClass().getMethod(prepareGetter());
                 setter = entity.getClass().getMethod(prepareSetter(), f.getType());
@@ -249,10 +290,13 @@ public class JpaOlingoEntity extends Entity {
             }
         }
 
-        String getFieldName() {
-            return name;
-        }
-
+        /**
+         * Executes getter.
+         *
+         * @param entity
+         *         this object
+         * @return value from the object
+         */
         Object get(T entity) {
             try {
                 return getter.invoke(entity);
@@ -263,11 +307,21 @@ public class JpaOlingoEntity extends Entity {
             return null;
         }
 
+        /**
+         * Executes setter. Overrides property value (if the property is not a key).
+         *
+         * @param entity
+         *         this object
+         * @param value
+         *         new value to be set
+         */
         void set(T entity, Object value) {
-            try {
-                setter.invoke(entity, value);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                LOG.error("Reflection problem with setting a value", e);
+            if (!isKey) {
+                try {
+                    setter.invoke(entity, value);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    LOG.error("Reflection problem with setting a value", e);
+                }
             }
         }
 

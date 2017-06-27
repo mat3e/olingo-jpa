@@ -1,6 +1,7 @@
 package io.github.mat3e.odata.common.provider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,12 @@ public abstract class AbstractEdmProvider extends CsdlAbstractEdmProvider {
             }
 
             updateTypesMapWithType(csdlProvider.getCsdlEntityType(), entities);
+
+            updateTypesMapWithType(csdlProvider.getCsdlEnumType(), enums);
+            updateTypesMapWithType(csdlProvider.getCsdlComplexType(), complexTypes);
+
+            updateOperationsMapFromList(csdlProvider.getCsdlActions(), actions);
+            updateOperationsMapFromList(csdlProvider.getCsdlFunctions(), functions);
         });
 
         container.setEntitySets(entitySets).setActionImports(getActionImports())
@@ -164,6 +171,26 @@ public abstract class AbstractEdmProvider extends CsdlAbstractEdmProvider {
             }
 
             types.put(fqn, type);
+        }
+    }
+
+    private <T extends CsdlOperation> void updateOperationsMapFromList(List<T> list,
+            Map<FullQualifiedName, List<T>> operations) {
+        for (T operation : list) {
+            FullQualifiedName fqn;
+            if (operation instanceof CsdlAction) {
+                fqn = FullQualifiedNamesUtil.createFullQualifiedActionName(operation.getName());
+            } else if (operation instanceof CsdlFunction) {
+                fqn = FullQualifiedNamesUtil.createFullQualifiedFunctionName(operation.getName());
+            } else {
+                throw new IllegalStateException("Not an operation");
+            }
+
+            if (operations.containsKey(fqn)) {
+                operations.get(fqn).add(operation);
+            } else {
+                operations.put(fqn, Arrays.asList(operation));
+            }
         }
     }
 
